@@ -1,5 +1,6 @@
 package com.order.ecommerce.controller;
 
+import com.order.ecommerce.dto.OrderItemDto;
 import com.order.ecommerce.dto.OrderResponseDto;
 import com.order.ecommerce.dto.OrderDto;
 import com.order.ecommerce.service.IOrderService;
@@ -63,6 +64,17 @@ public class OrderController {
         orderService.updateOrderStatus(orderId, orderStatus);
     }
 
+    @PatchMapping("/{orderId}/update")
+    @Operation(summary = "Update order quantity", description = "Update order quantity")
+    public void updateProductQuantity(@PathVariable("orderId") String orderId,
+                                      @RequestBody OrderItemDto orderItemDto) {
+        validateArgument(orderId == null || orderId.isEmpty(), "order id cannot be null or empty");
+        validateArgument(orderItemDto == null, "Request can not be null");
+        validateArgument(orderItemDto.getProductId() == null || orderItemDto.getProductId().isEmpty(), "product id cannot be null or empty");
+        validateArgument(orderItemDto.getQuantity() == null || orderItemDto.getQuantity().isEmpty(), "product id cannot be null or empty");
+        orderService.updateOrderQuantity(orderId, orderItemDto);
+    }
+
     private void validateArgument(OrderDto orderDto) {
         validateArgument(orderDto.getCustomerId() == null || orderDto.getCustomerId().isEmpty(), "customer id cannot be null or empty");
         validateArgument(orderDto.getTitle() == null || orderDto.getTitle().isEmpty(), "title cannot be null or empty");
@@ -78,5 +90,4 @@ public class OrderController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
         }
     }
-
 }

@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.order.ecommerce.validator.Validator.productValidator;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -87,7 +89,10 @@ public class OrderService implements IOrderService {
             return;
         }
 
-        List<OrderStatus> orderStatusList = Arrays.stream(OrderStatus.values()).filter(orderStatus -> orderStatus.toString().equalsIgnoreCase(status)).toList();
+        List<OrderStatus> orderStatusList = Arrays.stream(OrderStatus.values())
+                .filter(orderStatus -> orderStatus.toString()
+                        .equalsIgnoreCase(status))
+                .collect(Collectors.toList());
         if (orderStatusList.isEmpty()) {
             log.error("Invalid status = {}, failed to update order status for id = {}", status, orderId);
             return;
@@ -97,6 +102,29 @@ public class OrderService implements IOrderService {
         order.setOrderStatus(status.toUpperCase());
         orderRepository.save(order);
         log.info("Successfully updated order status to = {} for order id = {}", status.toUpperCase(), orderId);
+    }
+
+    @Override
+    public void updateOrderQuantity(String orderId, OrderItemDto orderItemDto) {
+        OrderDto orderDto = findOrderById(orderId);
+
+        if (orderDto == null) {
+            log.info("Cannot update status for orderId = {}", orderId);
+            return;
+        }
+
+        Order order = orderRepository.findById(orderId).get();
+        try {
+            productValidator(order, orderItemDto.getProductId());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        order.getOrderItems()
+                .stream()
+                .filter(orderItem -> orderItem.getProduct().getProductId().equals(orderItemDto.getProductId()))
+                .forEach(orderItem -> orderItem.setQuantity(orderItemDto.getQuantity()));
+        orderRepository.save(order);
+        log.info("Successfully updated product quantity to = {} for product = {}", orderItemDto, orderItemDto.getProductId());
     }
 
     private Order generateOrder(OrderDto orderDto) {
